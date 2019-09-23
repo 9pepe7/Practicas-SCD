@@ -41,24 +41,20 @@ double calcular_integral_secuencial(  )
 
 // -----------------------------------------------------------------------------
 // función que ejecuta cada hebra: recibe $i$ ==índice de la hebra, ($0\leq i<n$)
-double funcion_hebra( long indice )
-{
+double funcion_hebra(int indice){
   double res=0.0;
-  for(long i=indice; i<m; i+=n){
+  for(long i=indice; i<m; i+=n)
     res+=f( (i+0.5)/m );
-  }
   return res; // Devuelve la suma parcial, para que luego se sume todo y se divida
 }
 
 // -----------------------------------------------------------------------------
 // calculo de la integral de forma concurrente
-double calcular_integral_concurrente( )
-{
+double calcular_integral_concurrente(){
   double res=0.0;
   future<double> hebras[n];
-  for (int i=0; i<n; ++i){
+  for (int i=0; i<n; ++i)
     hebras[i] = async(launch::async, funcion_hebra, i);
-  }
   for(int i=0;i<n;++i)
     res+=hebras[i].get();
   return res/m;
