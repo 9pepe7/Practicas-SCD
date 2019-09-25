@@ -76,5 +76,5 @@ int main()
        << "resultado (no atom.) : " << contador_no_atom << endl
        << "tiempo mutex         : " << tiempo_mutex.count()   << " milisegundos" << endl
        << "tiempo atom.         : " << tiempo_atom.count()    << " milisegundos." << endl
-       << "tiempo no atom.      : " << tiempo_no_atom.count() << " millisegundos." << endl ;
+       << "tiempo no atom.      : " << tiempo_no_atom.count() << " milisegundos." << endl ;
 }

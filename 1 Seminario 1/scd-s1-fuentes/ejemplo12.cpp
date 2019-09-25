@@ -24,7 +24,7 @@ mutex mtx ; // objeto mutex compartido
 // función que ejecutan las hebras: (cada una recibe i == índice de la hebra)
 void funcion_hebra_m( int i )
 {
-  int fac = factorial( i+1 );
+  long fac = factorial( i+1 );
   mtx.lock() ; // esperar a que el mutex quede libre, entonces adquirirlo
   // sección crítica (escribe en la salida estándar)
   cout << "hebra número " << i << ", factorial(" << i+1 << ") = " << fac << endl;
