@@ -1,3 +1,0 @@
-"Como puede observarse, el tiempo para el caso de los objetos mutex
-es mucho mayor que el uso de instrucciones atómicas. Razona en tu
-portafolio a que se debe esto"
