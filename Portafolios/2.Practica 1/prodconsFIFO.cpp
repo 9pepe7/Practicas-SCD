@@ -15,6 +15,8 @@ const int num_items = 40 ,   // número de items
 	       tam_vec   = 10 ;   // tamaño del buffer
 Semaphore libres = tam_vec,		// Semaforos
 					ocupadas = 0;
+/* El semáforo libres indica el número de variables que pueden escribirse en el vector, tanto si están vacíos esos espacios, como si ya han sido leídos. Empieza siendo tam_vec, ya que el vector empieza vacío, y permite a la hebra productora usarlo.
+Por otro lado, el semáforo ocupadas es el análogo al anterioro, pero para la hebra consumidora, e indica las variables ya producidas que pueden ser consumidas en el vector. Naturalmente, su valor inicial es cero.*/
 int compartido[tam_vec]; // vector compartido
 int primera_libre = 0, 		// variables para controlar el uso del vector
 		primera_ocupada = 0;
