@@ -13,6 +13,7 @@ using namespace SEM ;
 
 const int num_items = 40 ,   // número de items
 	       tam_vec   = 10 ;   // tamaño del buffer
+int compartido[tam_vec];
 unsigned  cont_prod[num_items] = {0}, // contadores de verificación: producidos
           cont_cons[num_items] = {0}; // contadores de verificación: consumidos
 
@@ -104,7 +105,7 @@ void funcion_hebra_consumidora(  )
 int main()
 {
    cout << "--------------------------------------------------------" << endl
-        << "Problema de los productores-consumidores (solución LIFO)." << endl
+        << "Problema de los productores-consumidores (solución FIFO)." << endl
         << "--------------------------------------------------------" << endl
         << flush ;
 
