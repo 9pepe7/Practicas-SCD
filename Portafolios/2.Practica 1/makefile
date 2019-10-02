@@ -2,7 +2,8 @@
 .PHONY: pc
 .PRECIOUS: %_exe
 
-//Hacer make pcf (prodconsFIFO), pcl (prodconsLIFO) o fu(fumadores)
+# Hacer make pcf, pcl ó fu para prodconsFIFO, prodconsLIFO ó fumadores, respectivamente
+
 compilador:=g++
 
 pcf: prodconsFIFO_exe
