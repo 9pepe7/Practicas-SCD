@@ -13,7 +13,10 @@ using namespace SEM ;
 
 const int num_items = 40 ,   // número de items
 	       tam_vec   = 10 ;   // tamaño del buffer
-int compartido[tam_vec];
+Semaphore libres = tam_vec,		// Semaforos
+					ocupadas = 0;
+int compartido[tam_vec]; // vector compartido
+int primera_libre = 0; 		// variable para controlar el uso del vector, 0<=primera_libre<tam_vec
 unsigned  cont_prod[num_items] = {0}, // contadores de verificación: producidos
           cont_cons[num_items] = {0}; // contadores de verificación: consumidos
 
@@ -84,8 +87,11 @@ void  funcion_hebra_productora(  )
 {
    for( unsigned i = 0 ; i < num_items ; i++ )
    {
-      int dato = producir_dato() ;
-      // completar ........
+		 int dato = producir_dato() ;
+		 sem_wait(libres);
+		 compartido[primera_libre]=dato; //Insertar valor en el vector
+		 primera_libre++;
+		 sem_signal(ocupadas);
    }
 }
 
@@ -95,9 +101,12 @@ void funcion_hebra_consumidora(  )
 {
    for( unsigned i = 0 ; i < num_items ; i++ )
    {
-      int dato ;
-      // completar ......
-      consumir_dato( dato ) ;
+		 int dato;
+		 sem_wait(ocupadas);
+		 dato=compartido[primera_libre-1]; //Tomar valor del vector, el anterior a la primera libre (la ultima ocupada)
+		 primera_libre--;
+		 sem_signal(libres);
+		 consumir_dato( dato ) ;
     }
 }
 //----------------------------------------------------------------------
@@ -105,7 +114,7 @@ void funcion_hebra_consumidora(  )
 int main()
 {
    cout << "--------------------------------------------------------" << endl
-        << "Problema de los productores-consumidores (solución FIFO)." << endl
+        << "Problema de los productores-consumidores (solución LIFO)." << endl
         << "--------------------------------------------------------" << endl
         << flush ;
 
