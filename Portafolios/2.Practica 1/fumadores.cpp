@@ -42,8 +42,8 @@ int genera_ingr(){
 }
 void funcion_hebra_estanquero(){
   while (true){
-    sem_wait(mostr_vacio);
     int i=genera_ingr();
+    sem_wait(mostr_vacio);
     cout << "Se ha puesto en el mostrador el ingrediente " << i << endl;
     sem_signal(ingr_disp[i]);
   }
@@ -52,24 +52,16 @@ void funcion_hebra_estanquero(){
 //-------------------------------------------------------------------------
 // Función que simula la acción de fumar, como un retardo aleatoria de la hebra
 
-void fumar( int num_fumador )
-{
-
+void fumar( int num_fumador ){
    // calcular milisegundos aleatorios de duración de la acción de fumar)
    chrono::milliseconds duracion_fumar( aleatorio<20,200>() );
-
    // informa de que comienza a fumar
-
     cout << "Fumador " << num_fumador << "  :"
           << " empieza a fumar (" << duracion_fumar.count() << " milisegundos)" << endl;
-
    // espera bloqueada un tiempo igual a ''duracion_fumar' milisegundos
    this_thread::sleep_for( duracion_fumar );
-
    // informa de que ha terminado de fumar
-
     cout << "Fumador " << num_fumador << "  : termina de fumar, comienza espera de ingrediente." << endl;
-
 }
 
 //----------------------------------------------------------------------
