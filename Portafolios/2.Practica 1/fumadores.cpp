@@ -12,7 +12,7 @@ using namespace SEM ;
 const int n_fumadores = 3; // Numero de fumadores y de ingredientes distintos
 Semaphore mostr_vacio = 1,
 /* Semáforo que controla a la hebra del estanquero. Valdrá 1 cuando el mostrador esté vacío, y ésta pueda poner en él un ingrediente nuevo, y cero cuando ya haya un ingrediente en el mostrador. Su valor inicial, por tanto, será 1.*/
-          ingr_disp[n_fumadores] = {0};
+          ingr_disp[n_fumadores] = {0,0,0};
 /* Array de semáforos, análogos al array de hebras de fumadores, que se activarán cuando un fumador i tenga su ingrediente en el mostrador preparado para ser recogido. Su valor inicial por tanto será cero, ya que de primeras no habrá ningún ingrediente preparado. */
 
 
@@ -34,12 +34,16 @@ template< int min, int max > int aleatorio()
 //----------------------------------------------------------------------
 // función que ejecuta la hebra del estanquero
 
-void funcion_hebra_estanquero(  )
-{
-  int i;
+int genera_ingr(){
+  chrono::milliseconds duracion(aleatorio<20,200>());
+  int i=aleatorio<0,n_fumadores-1>();
+  this_thread::sleep_for(duracion);
+  return i;
+}
+void funcion_hebra_estanquero(){
   while (true){
-    i=aleatorio<0,n_fumadores>();
     sem_wait(mostr_vacio);
+    int i=genera_ingr();
     cout << "Se ha puesto en el mostrador el ingrediente " << i << endl;
     sem_signal(ingr_disp[i]);
   }
@@ -70,11 +74,11 @@ void fumar( int num_fumador )
 
 //----------------------------------------------------------------------
 // función que ejecuta la hebra del fumador
-void  funcion_hebra_fumador( int num_fumador )
-{
-   while( true )
-   {
-
+void funcion_hebra_fumador(const int num_fumador){
+   while(true){
+     sem_wait(ingr_disp[num_fumador]);
+     sem_signal(mostr_vacio);
+     fumar(num_fumador);
    }
 }
 
@@ -83,7 +87,7 @@ void  funcion_hebra_fumador( int num_fumador )
 int main()
 {
    thread hebra_estanquero(funcion_hebra_estanquero),
-   thread hebras_fumadores [n_fumadores];
+          hebras_fumadores [n_fumadores];
    for(int i=0; i<n_fumadores; ++i){
      hebras_fumadores[i]=thread(funcion_hebra_fumador,i);
    }
