@@ -79,7 +79,7 @@ void MBarreraSC::cita( int num_hebra )
 void funcion_hebra( MBarreraSC * monitor, int num_hebra )
 {
    while( true )
-   {  const int ms = aleatorio<5,100>();
+   {  const int ms = aleatorio<500,1000>();
       this_thread::sleep_for( chrono::milliseconds(ms) );
       monitor->cita( num_hebra );
    }
