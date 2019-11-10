@@ -20,6 +20,9 @@ x4: barrera2_su_exe
 x5: prodcons1_sc_exe
 	./$<
 
+x5-2: prodcons1_sc-FIFO_exe
+	./$<
+
 x6: prodcons2_sc_exe
 	./$<
 
@@ -39,6 +42,8 @@ barrera2_su_exe: barrera2_su.cpp $(hmonsrcs)
 	$(compilador) $(opcionesc)  -o $@ $< HoareMonitor.cpp Semaphore.cpp
 
 prodcons1_sc_exe: prodcons1_sc.cpp $(hmonsrcs)
+	$(compilador) $(opcionesc)  -o $@ $<
+prodcons1_sc-FIFO_exe: prodcons1_sc-FIFO.cpp $(hmonsrcs)
 	$(compilador) $(opcionesc)  -o $@ $<
 
 prodcons2_sc_exe: prodcons2_sc.cpp $(hmonsrcs)

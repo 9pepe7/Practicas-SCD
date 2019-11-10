@@ -3,15 +3,15 @@
 // Sistemas concurrentes y Distribuidos.
 // Seminario 2. Introducción a los monitores en C++11.
 //
-// archivo: prodcons_1.cpp
+// archivo: prodcons_2.cpp
 // Ejemplo de un monitor en C++11 con semántica SC, para el problema
-// del productor/consumidor, con un único productor y un único consumidor.
+// del productor/consumidor, con un varios productores y consumidores.
 // Opcion LIFO (stack)
 //
 // Historial:
-// Creado en Julio de 2017
+// Creado en Noviembre de 2019
 // -----------------------------------------------------------------------------
-
+/* José Manuel Navarro Cuartero */
 
 #include <iostream>
 #include <iomanip>
@@ -25,6 +25,8 @@ using namespace std ;
 
 constexpr int
    num_items  = 40 ;     // número de items a producir/consumir
+const int n_hebras_productoras = 2,
+          n_hebras_consumidoras = 2;
 
 mutex
    mtx ;                 // mutex de escritura en pantalla
