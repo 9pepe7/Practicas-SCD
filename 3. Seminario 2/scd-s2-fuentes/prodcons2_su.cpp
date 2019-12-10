@@ -1,20 +1,16 @@
 // -----------------------------------------------------------------------------
-// archivo: prodcons_1-FIFO.cpp
-// Ejemplo de un monitor en C++11 con semántica SC, para el problema
-// del productor/consumidor, con un único productor y un único consumidor.
-// Opcion FIFO
+//
+// Sistemas concurrentes y Distribuidos.
+// Seminario 2. Introducción a los monitores en C++11.
+//
+// archivo: prodcons2_su.cpp
+// Ejemplo de un monitor en C++11 con semántica SU, para el problema
+// del productor/consumidor, con un varios productores y consumidores.
 //
 // Historial:
 // Creado en Noviembre de 2019
 // -----------------------------------------------------------------------------
-
-/* José Manuel Navarro Cuartero
-Se ha tomado como archivo base el prodcons1-sc.cpp, que estaba hecho como LIFO.
-Se añaden las variables "primera_ocupada" y "celdas_ocupadas" para controlar el buffer.
-Se modifican además los métodos "leer" y "escribir".
-"Leer" espera cuando las "celdas_ocupadas" es igual a 0, y toma del buffer el valor designado
-por "primera_ocupada". Análogamente, "escribir" espera cuando "celdas_ocupadas" es igual a
-num_celdas_total, y escribe el valor en el lugar designado por "primera_libre" */
+/* José Manuel Navarro Cuartero */
 
 #include <iostream>
 #include <iomanip>
@@ -23,11 +19,15 @@ num_celdas_total, y escribe el valor en el lugar designado por "primera_libre" *
 #include <mutex>
 #include <condition_variable>
 #include <random>
+#include "HoareMonitor.h"
 
 using namespace std ;
+using namespace HM ;
 
 constexpr int
    num_items  = 40 ;     // número de items a producir/consumir
+const int n_hebras_productoras = 4, // Tienen que dividir a num_items
+          n_hebras_consumidoras = 4;
 
 mutex
    mtx ;                 // mutex de escritura en pantalla
@@ -48,19 +48,34 @@ template< int min, int max > int aleatorio()
   return distribucion_uniforme( generador );
 }
 
+// clase para monitor Barrera, version 2,  semántica SU
+
+class MBarreraParSU : public HoareMonitor
+{
+   private:
+   int      cont,             // contador de hebras en cita
+            num_hebras_cita ; // número total de hebras en cita
+   CondVar  cola ;            // cola de hebras esperando en cita
+
+   public:
+   MBarreraParSU( int p_num_hebras_cita ) ; // constructor
+   void cita( int num_hebra );               // método de cita
+} ;
+
 //**********************************************************************
 // funciones comunes a las dos soluciones (fifo y lifo)
 //----------------------------------------------------------------------
 
-int producir_dato()
-{
-   static int contador = 0 ;
+int producir_dato(const int &n){
+   static int contador[n_hebras_productoras]; // array comun a todas las hebras
+   int numero = contador[n] +n*num_items/n_hebras_productoras;
    this_thread::sleep_for( chrono::milliseconds( aleatorio<20,100>() ));
    mtx.lock();
-   cout << "producido: " << contador << endl << flush ;
+   cout << "producido: " << numero << endl << flush ;
    mtx.unlock();
-   cont_prod[contador] ++ ;
-   return contador++ ;
+   cont_prod[numero] ++ ;
+   contador[n]++;
+   return numero;
 }
 //----------------------------------------------------------------------
 
@@ -121,8 +136,7 @@ class ProdCons1SC
    num_celdas_total = 10;   //  núm. de entradas del buffer
  int                        // variables permanentes
    buffer[num_celdas_total],//  buffer de tamaño fijo, con los datos
-   primera_libre ,          //  indice de celda de la próxima inserción
-  primera_ocupada, celdas_ocupadas;
+   primera_libre ;          //  indice de celda de la próxima inserción
  mutex
    cerrojo_monitor ;        // cerrojo del monitor
  condition_variable         // colas condicion:
@@ -139,8 +153,6 @@ class ProdCons1SC
 ProdCons1SC::ProdCons1SC(  )
 {
    primera_libre = 0 ;
-   primera_ocupada = 0;
-   celdas_ocupadas = 0;
 }
 // -----------------------------------------------------------------------------
 // función llamada por el consumidor para extraer un dato
@@ -151,13 +163,14 @@ int ProdCons1SC::leer(  )
    unique_lock<mutex> guarda( cerrojo_monitor );
 
    // esperar bloqueado hasta que 0 < num_celdas_ocupadas
-   if ( celdas_ocupadas == 0 )
+   while ( primera_libre == 0 )
       ocupadas.wait( guarda );
 
    // hacer la operación de lectura, actualizando estado del monitor
-   const int valor = buffer[primera_ocupada] ;
-   primera_ocupada=(primera_ocupada+1)%num_celdas_total ;
-   celdas_ocupadas--;
+   assert( 0 < primera_libre  );
+   primera_libre-- ;
+   const int valor = buffer[primera_libre] ;
+
 
    // señalar al productor que hay un hueco libre, por si está esperando
    libres.notify_one();
@@ -173,13 +186,15 @@ void ProdCons1SC::escribir( int valor )
    unique_lock<mutex> guarda( cerrojo_monitor );
 
    // esperar bloqueado hasta que num_celdas_ocupadas < num_celdas_total
-   if ( celdas_ocupadas == num_celdas_total )
+   while ( primera_libre == num_celdas_total )
       libres.wait( guarda );
+
+   //cout << "escribir: ocup == " << num_celdas_ocupadas << ", total == " << num_celdas_total << endl ;
+   assert( primera_libre < num_celdas_total );
 
    // hacer la operación de inserción, actualizando estado del monitor
    buffer[primera_libre] = valor ;
-   primera_libre=(primera_libre+1)%num_celdas_total ;
-   celdas_ocupadas++;
+   primera_libre++ ;
 
    // señalar al consumidor que ya hay una celda ocupada (por si esta esperando)
    ocupadas.notify_one();
@@ -187,19 +202,19 @@ void ProdCons1SC::escribir( int valor )
 // *****************************************************************************
 // funciones de hebras
 
-void funcion_hebra_productora( ProdCons1SC * monitor )
+void funcion_hebra_productora( ProdCons1SC * monitor, int n)
 {
-   for( unsigned i = 0 ; i < num_items ; i++ )
+   for( unsigned i = 0 ; i < num_items/n_hebras_productoras ; i++ )
    {
-      int valor = producir_dato() ;
+      int valor = producir_dato(n) ;
       monitor->escribir( valor );
    }
 }
 // -----------------------------------------------------------------------------
 
-void funcion_hebra_consumidora( ProdCons1SC * monitor )
+void funcion_hebra_consumidora( ProdCons1SC * monitor)
 {
-   for( unsigned i = 0 ; i < num_items ; i++ )
+   for( unsigned i = 0 ; i < num_items/n_hebras_consumidoras ; i++ )
    {
       int valor = monitor->leer();
       consumir_dato( valor ) ;
@@ -207,20 +222,29 @@ void funcion_hebra_consumidora( ProdCons1SC * monitor )
 }
 // -----------------------------------------------------------------------------
 
-int main()
-{
-   cout << "-------------------------------------------------------------------------------" << endl
-        << "Problema de los productores-consumidores (1 prod/cons, Monitor SC, buffer FIFO). " << endl
+int main(){
+  cout << "-------------------------------------------------------------------------------" << endl
+        << "Problema de los productores-consumidores (2 prod/cons, Monitor SC, buffer FIFO). " << endl
         << "-------------------------------------------------------------------------------" << endl
         << flush ;
+  ProdCons1SC monitor ;
 
-   ProdCons1SC monitor ;
+  thread hebra_productora[n_hebras_productoras],
+         hebra_consumidora[n_hebras_consumidoras];
 
-   thread hebra_productora ( funcion_hebra_productora, &monitor ),
-          hebra_consumidora( funcion_hebra_consumidora, &monitor );
+  for(int i=0;i<n_hebras_productoras;++i){
+    hebra_productora[i]=thread(funcion_hebra_productora, &monitor, i);
+  }
+  for(int i=0;i<n_hebras_consumidoras;++i){
+    hebra_consumidora[i]=thread(funcion_hebra_consumidora, &monitor);
+  }
 
-   hebra_productora.join() ;
-   hebra_consumidora.join() ;
+  for(int i=0;i<n_hebras_productoras;++i){
+    hebra_productora[i].join() ;
+  }
+  for(int i=0;i<n_hebras_consumidoras;++i){
+    hebra_consumidora[i].join() ;
+  }
 
    // comprobar que cada item se ha producido y consumido exactamente una vez
    test_contadores() ;
